@@ -159,7 +159,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding-top:24px;display
     <section class="dls" id="telechargements">
       <span class="eyebrow">Téléchargements</span>
       <h2 class="dltitle">Toutes les versions</h2>
-      <p class="lede">La dernière version de chaque outil, et les anciennes si tu en as besoin. Fichiers .dmg pour macOS.</p>
+      <p class="lede">La dernière version de chaque outil, et les anciennes si tu en as besoin. Fichiers .dmg (et .zip pour les installeurs) pour macOS.</p>
       <div class="dlgrid" id="downloads"></div>
     </section>
   </main>
@@ -177,7 +177,7 @@ footer{border-top:1px solid var(--line);margin-top:56px;padding-top:24px;display
 /* ——— Tes créations : modifie ici (version, lien de téléchargement…) ——— */
 /* ——— Lien de base des téléchargements (GitHub Releases). Une fois rempli, tous les boutons s'activent. ——— */
 const DL_BASE = "https://github.com/clideurbeats-lang/clideurbeats-apps/releases/download/app";
-const url = f => DL_BASE ? `${DL_BASE}/${f}` : "";
+const url = f => /^https?:/.test(f) ? f : (DL_BASE ? `${DL_BASE}/${f}` : "");
 const ITEMS = [
   { id:"blakdown", name:"blakdown*", kind:"app", type:"App Mac", version:"v4.0", accent:"#c9c9d1",
     tagline:"Colle un lien, récupère le son. YouTube, Spotify, Insta, TikTok en WAV ou MP3, ou en vidéo MP4.",
@@ -189,11 +189,12 @@ const ITEMS = [
     chips:["MP3/WAV → MIDI","BASS / MELO","FL Studio"],
     features:["Deux modes : BASS pour les lignes de basse, MELO pour les mélodies","Quantize léger toujours actif","Espace pour lecture / pause","Interface sombre et lumineuse, peu de boutons","Testé dans FL Studio sur Mac"],
     format:".dmg", versions:[["v4.0.0","M1DI-4.0.0.dmg","61 Mo"]] },
-  { id:"k1t", name:"K1T", kind:"plugin", type:"Plugin VST3 · AU", version:"v2.0", accent:"#a970ff",
-    tagline:"Le labo à drum kits. Mélange tes drums, génère des variations, sors tout un FLP en MIDI et samples.",
-    chips:["Generate · 808","Enrich FX","FLP → MIDI"],
-    features:["Mélange plusieurs drums ensemble (ex. 3 hats en un)","Generate : nouvelles variations à partir d'un son de référence, catégorie TOUT ou 808","Importe un .flp et récupère tous les MIDI et samples utilisés","Enrich : effets de mix au hasard, chaque effet reste réglable","EQ graphique à la main, décalage des hats à la milliseconde","Mises à jour directement depuis le plugin"],
-    format:".dmg", versions:[["v2.0","K1T_v2.0.dmg","7,8 Mo"],["v0.1","K1T_v0.1.dmg","7,7 Mo"]] },
+  { id:"k1t", name:"K1T", kind:"plugin", type:"Plugin VST3 · AU", version:"v3.0", accent:"#a970ff",
+    tagline:"Le labo à drum kits. Mélange tes drums, génère des variations, écoute et sors un FLP en MIDI et samples.",
+    chips:["808 en C","Écoute des FLP","Enrich FX"],
+    features:["Mélange plusieurs drums ensemble (ex. 3 hats en un)","Generate : nouvelles variations depuis un son de référence ; en mode 808 elles sortent toutes accordées en C","Exporte chaque son un par un, ou ajoute-le direct à ton kit","Bouton RETOUR (Cmd+Z) pour revenir en arrière","FLP : écoute chaque pattern avec les vrais sons du projet, puis exporte seulement les MIDI et samples que tu coches","Enrich : effets de mix au hasard, chaque effet reste réglable ; EQ graphique à la main","Mises à jour automatiques depuis ce site, directement dans le plugin"],
+    format:".zip (installeur)", note:"Le .zip se décompresse dans Téléchargements. Tu as déjà K1T v2 ? Ouvre-le dans FL et clique sur METTRE À JOUR. Sinon, dans le Terminal : bash ~/Downloads/installer_k1t_v3.sh",
+    versions:[["v3.0","https://raw.githubusercontent.com/clideurbeats-lang/clideurbeats-apps/main/downloads/K1T_v3.0.zip","70 Ko","ZIP"],["v2.0","K1T_v2.0.dmg","7,8 Mo"],["v0.1","K1T_v0.1.dmg","7,7 Mo"]] },
   { id:"sp4ce", name:"SP4CE", kind:"plugin", type:"Plugin VST3 · AU", version:"v1.1.0", accent:"#e8eef6",
     tagline:"L'esprit CamelSpace, remis à jour pour 2027. Les mêmes modules et presets, avec une interface qui réagit au son.",
     chips:["Multi-effets","Presets d'origine","Animations"],
@@ -256,12 +257,12 @@ document.getElementById("downloads").innerHTML = ITEMS.map(it=>`
   <div class="dlg" style="--a:${it.accent}">
     <div class="row dlh"><div class="icon sm">${logo(it)}</div>
       <div style="min-width:0"><h3 class="name">${it.name}</h3><div class="kind">${it.type}</div></div></div>
-    <div class="vlist">${it.versions.map(([v,f,sz],i)=>`
+    <div class="vlist">${it.versions.map(([v,f,sz,lbl],i)=>`
       <div class="vrow${i===0?" latest":""}">
         <span class="vv">${v}</span>
         <span class="vtag">${i===0?"Dernière":"Ancienne"}</span>
         <span class="vsz">${sz}</span>
-        ${dlBtn(f,"DMG")}
+        ${dlBtn(f,lbl||"DMG")}
       </div>`).join("")}</div>
   </div>`).join("");
 
@@ -309,7 +310,7 @@ function openSheet(id){
     <div class="meta"><div><small>Version</small><span>${it.version}</span></div><div><small>Système</small><span>macOS</span></div><div><small>Fichier</small><span>${it.format}</span></div></div>
     <ul>${it.features.map(f=>`<li>${f}</li>`).join("")}</ul>
     ${url(it.versions[0][1])
-      ? `<a class="dl" href="${url(it.versions[0][1])}" target="_blank" rel="noopener">${dlIcon} Télécharger ${it.name} ${it.version} · ${it.versions[0][2]}</a><p class="note">Ouvre le .dmg, glisse l'app ou le plugin, c'est installé.</p>`
+      ? `<a class="dl" href="${url(it.versions[0][1])}" target="_blank" rel="noopener">${dlIcon} Télécharger ${it.name} ${it.version} · ${it.versions[0][2]}</a><p class="note">${it.note||"Ouvre le .dmg, glisse l'app ou le plugin, c'est installé."}</p>`
       : `<span class="dl off">Téléchargement bientôt dispo</span><p class="note">Le lien arrive très vite.</p>`}
     ${it.versions.length>1?`<p class="note"><a href="#telechargements" onclick="closeSheet()">Anciennes versions (${it.versions.length-1}) en bas de la page</a></p>`:""}`;
   sheet.classList.add("on"); scrim.classList.add("on");
