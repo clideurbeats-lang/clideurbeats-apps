@@ -1,0 +1,6 @@
+{
+  "name": "luhpitch",
+  "version": "2.0.0",
+  "installer": "https://raw.githubusercontent.com/clideurbeats-lang/clideurbeats-apps/main/updates/installer_luhpitch_v2.sh",
+  "notes": "Pitch façon sampler (808 identiques à un sample pitché) · précision au millième de demi-ton · onglet STEMS (voix, mélo, basse, drums) · détection de tonalité + bouton ACCORDER · mises à jour depuis le plugin"
+}
