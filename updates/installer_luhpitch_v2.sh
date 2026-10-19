@@ -41,14 +41,22 @@ if ! xcode-select -p >/dev/null 2>&1; then
   xcode-select --install || true
   die "Installe les « Command Line Tools » (fenêtre ouverte), puis relance ce script."
 fi
+# CMake récent obligatoire (les versions < 3.31 plantent avec le dernier Xcode)
+CMAKE_V="4.1.2"
 CMAKE="$(command -v cmake || true)"
-if [ -z "$CMAKE" ] && [ -x "$WORK/cmake/CMake.app/Contents/bin/cmake" ]; then CMAKE="$WORK/cmake/CMake.app/Contents/bin/cmake"; fi
+if [ -n "$CMAKE" ]; then
+  SYS_V="$("$CMAKE" --version | head -1 | awk '{print $3}')"
+  if [ "$(printf '%s\n' "3.31.0" "$SYS_V" | sort -V | head -1)" != "3.31.0" ]; then CMAKE=""; fi
+fi
+PORTABLE="$WORK/cmake-$CMAKE_V/CMake.app/Contents/bin/cmake"
+if [ -z "$CMAKE" ] && [ -x "$PORTABLE" ]; then CMAKE="$PORTABLE"; fi
 if [ -z "$CMAKE" ]; then
-  echo -e "  ${D}téléchargement de CMake portable…${N}"
-  curl -fsSL -o "$WORK/cmake.tgz" "https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.30.5-macos-universal.tar.gz" || die "Téléchargement de CMake impossible (Internet ?)"
-  rm -rf "$WORK/cmake" && mkdir -p "$WORK/cmake"
-  tar xzf "$WORK/cmake.tgz" -C "$WORK/cmake" --strip-components 1
-  CMAKE="$WORK/cmake/CMake.app/Contents/bin/cmake"
+  echo -e "  ${D}téléchargement de CMake $CMAKE_V…${N}"
+  curl -fsSL -o "$WORK/cmake.tgz" "https://github.com/Kitware/CMake/releases/download/v$CMAKE_V/cmake-$CMAKE_V-macos-universal.tar.gz" || die "Téléchargement de CMake impossible (Internet ?)"
+  rm -rf "$WORK/cmake-$CMAKE_V" && mkdir -p "$WORK/cmake-$CMAKE_V"
+  tar xzf "$WORK/cmake.tgz" -C "$WORK/cmake-$CMAKE_V" --strip-components 1
+  rm -f "$WORK/cmake.tgz"; rm -rf "$WORK/cmake"
+  CMAKE="$PORTABLE"
 fi
 [ -x "$CMAKE" ] || die "CMake introuvable."
 ok "$("$CMAKE" --version | head -1)"
@@ -73,10 +81,23 @@ ok "JUCE $JUCE_TAG"
 
 step "Compilation"
 if [ "$PLUGIN" = "1" ]; then ARCH="$(uname -m)"; else ARCH="arm64;x86_64"; fi
+SDK="$(xcrun --sdk macosx --show-sdk-path 2>/dev/null || true)"
+configure() {
+  rm -rf "$WORK/build"
+  "$CMAKE" -S "$WORK/src" -B "$WORK/build" -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_OSX_ARCHITECTURES="$1" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+    ${SDK:+-DCMAKE_OSX_SYSROOT="$SDK"} > "$WORK/configure.log" 2>&1
+}
 echo -e "  ${D}($ARCH — quelques minutes la première fois)${N}"
-"$CMAKE" -S "$WORK/src" -B "$WORK/build" -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_OSX_ARCHITECTURES="$ARCH" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 > "$WORK/configure.log" 2>&1 \
-  || { tail -20 "$WORK/configure.log"; die "configuration échouée (voir $WORK/configure.log)"; }
+if ! configure "$ARCH"; then
+  if [ "$ARCH" != "$(uname -m)" ]; then
+    ARCH="$(uname -m)"
+    echo -e "  ${D}nouvel essai pour ce Mac uniquement ($ARCH)…${N}"
+    configure "$ARCH" || { tail -20 "$WORK/configure.log"; die "configuration échouée (voir $WORK/configure.log)"; }
+  else
+    tail -20 "$WORK/configure.log"; die "configuration échouée (voir $WORK/configure.log)"
+  fi
+fi
 "$CMAKE" --build "$WORK/build" --config Release -j "$(sysctl -n hw.ncpu)" > "$WORK/build.log" 2>&1 \
   || { grep -E "error" "$WORK/build.log" | head -20; die "compilation échouée (voir $WORK/build.log)"; }
 ART="$WORK/build/luhpitch_artefacts/Release"
