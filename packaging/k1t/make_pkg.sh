@@ -17,8 +17,9 @@ done
 
 # les bundles s'installent toujours au bon endroit (pas de « relocation » vers une ancienne copie)
 pkgbuild --analyze --root "$ROOT" "$TMP/comp.plist"
-n=$(/usr/libexec/PlistBuddy -c "Print" "$TMP/comp.plist" | grep -c "RootRelativeBundlePath" || true)
-for ((i=0; i<n; i++)); do /usr/libexec/PlistBuddy -c "Set :$i:BundleIsRelocatable false" "$TMP/comp.plist"; done
+n=$(plutil -convert xml1 -o - "$TMP/comp.plist" | grep -c "<key>RootRelativeBundlePath</key>" || true)
+for ((i=0; i<n; i++)); do plutil -replace "$i.BundleIsRelocatable" -bool NO "$TMP/comp.plist"; done
+plutil -p "$TMP/comp.plist"
 
 chmod +x "$HERE/scripts/postinstall"
 pkgbuild --root "$ROOT" --component-plist "$TMP/comp.plist" --identifier com.clideurbeats.k1t \
