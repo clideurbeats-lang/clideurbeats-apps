@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>K1T __VERSION__</title>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <background file="background.png" alignment="bottomleft" scaling="none" mime-type="image/png"/>
+    <background-darkAqua file="background.png" alignment="bottomleft" scaling="none" mime-type="image/png"/>
+    <options customize="never" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+    <domains enable_localSystem="true" enable_currentUserHome="false" enable_anywhere="false"/>
+    <volume-check>
+        <allowed-os-versions><os-version min="10.13"/></allowed-os-versions>
+    </volume-check>
+    <choices-outline>
+        <line choice="default"><line choice="com.clideurbeats.k1t"/></line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="com.clideurbeats.k1t" visible="false">
+        <pkg-ref id="com.clideurbeats.k1t"/>
+    </choice>
+    <pkg-ref id="com.clideurbeats.k1t" version="__VERSION__" onConclusion="none">k1t-core.pkg</pkg-ref>
+</installer-gui-script>

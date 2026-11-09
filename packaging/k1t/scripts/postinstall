@@ -1,0 +1,13 @@
+#!/bin/bash
+# Après l'installation : enlève les anciennes copies « perso » (sinon FL voit K1T en double),
+# retire la quarantaine et rafraîchit la liste des Audio Units.
+U="$(stat -f%Su /dev/console 2>/dev/null || true)"
+if [ -n "$U" ] && [ "$U" != "root" ]; then
+  H="$(dscl . -read "/Users/$U" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
+  if [ -n "$H" ]; then
+    rm -rf "$H/Library/Audio/Plug-Ins/VST3/K1T.vst3" "$H/Library/Audio/Plug-Ins/Components/K1T.component"
+  fi
+fi
+xattr -dr com.apple.quarantine /Library/Audio/Plug-Ins/VST3/K1T.vst3 /Library/Audio/Plug-Ins/Components/K1T.component 2>/dev/null
+killall -9 AudioComponentRegistrar 2>/dev/null
+exit 0

@@ -1,0 +1,60 @@
+name: K1T — .dmg pour Mac (Intel + Apple Silicon)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/k1t/**"
+      - "packaging/k1t/**"
+      - ".github/workflows/k1t.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: v
+        run: |
+          V=$(sed -n 's/^project(K1T VERSION \([0-9.]*\)).*/\1/p' src/k1t/CMakeLists.txt)
+          V=${V%.0}
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "K1T $V"
+
+      - name: JUCE
+        run: git clone --depth 1 --branch 8.0.15 https://github.com/juce-framework/JUCE.git "$RUNNER_TEMP/JUCE"
+
+      - name: Compilation universelle (Intel + Apple Silicon)
+        run: |
+          cmake --version
+          cmake -S src/k1t -B build -DCMAKE_BUILD_TYPE=Release -DJUCE_DIR="$RUNNER_TEMP/JUCE" \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 \
+            -DCMAKE_OSX_SYSROOT="$(xcrun --sdk macosx --show-sdk-path)"
+          cmake --build build --config Release -j "$(sysctl -n hw.ncpu)" --target K1T_VST3 K1T_AU
+
+      - name: Installeur .pkg + .dmg
+        run: bash packaging/k1t/make_pkg.sh "${{ steps.v.outputs.version }}" build/K1T_artefacts/Release out
+
+      - name: Vérification
+        run: |
+          pkgutil --check-signature "out/K1T_v${{ steps.v.outputs.version }}.pkg" || true
+          pkgutil --payload-files "out/K1T_v${{ steps.v.outputs.version }}.pkg" | head -20
+          hdiutil imageinfo "out/K1T_v${{ steps.v.outputs.version }}.dmg" | head -5
+
+      - name: Publication sur la release « app »
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload app "out/K1T_v${{ steps.v.outputs.version }}.dmg" "out/K1T_v${{ steps.v.outputs.version }}.pkg" --clobber
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: K1T_v${{ steps.v.outputs.version }}
+          path: out/*

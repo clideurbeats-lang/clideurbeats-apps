@@ -1,0 +1,16 @@
+K1T __VERSION__ — par @clideurbeats
+====================================
+
+1. Double-clique sur « Installer K1T.pkg ».
+2. Clique sur Continuer, puis Installer (le Mac demande ton mot de passe : normal).
+3. Ouvre FL Studio → Options → Manage plugins → Find installed plugins.
+   Ensuite : Channel rack → + → K1T.
+
+Si macOS refuse d'ouvrir l'installeur (« Apple ne peut pas vérifier… ») :
+  • clique sur OK (ou Terminé) ;
+  • ouvre Réglages Système → Confidentialité et sécurité ;
+  • tout en bas, clique sur « Ouvrir quand même » à côté de « Installer K1T.pkg », puis confirme.
+  (Sur un macOS plus ancien : clic droit sur « Installer K1T.pkg » → Ouvrir → Ouvrir.)
+C'est à faire une seule fois.
+
+Marche sur Mac Intel et Apple Silicon, macOS 10.13 ou plus récent.
